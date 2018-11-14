@@ -1,0 +1,54 @@
+#include <SoftwareSerial.h>    // Incluimos a livraria SoftwareSerial
+SoftwareSerial mySerial(8, 9); // Declaramos os pinos RX(8) y TX(9) que vamos a usar
+
+int knockPin = 10; // Use o pino 10 como nossa entrada 
+int knockVal = 0 ; // Aqui é onde nós registramos nossa medida de choque 
+unsigned long lastKnockTime; // Registre a hora em que medimos um choque
+boolean bAlarm = false ;
+int knockAlarmTime = 500; // Número de milisegundos para manter o alarme de detonação alto
+
+
+void setup(){
+Serial.begin(9600);       // Iniciamos a comunicação serie
+mySerial.begin(9600);     // Iniciamos uma segunda comunicação serie
+pinMode (knockPin, INPUT ); // entrada do KY-031
+delay(1000);              // Pausa de 1 segundo
+//               
+}
+ void Impacto  (){
+   knockVal =  digitalRead (knockPin); // leia o valor KY-031
+  
+  if (knockVal == 1){ // Se virmos uma batida
+  
+    
+    EnviaSMS(); // Chamada a função que envia o SMS
+    lastKnockTime =  millis (); // registra o tempo do choque     
+  }else{
+    if  (( millis () -lastKnockTime)> knockAlarmTime && bAlarm) {
+       Serial . println ( "não bateu" );
+      bAlarm =  false ;
+    }
+  }
+}
+
+void loop(){
+   EnviaSMS(); // Chamada a função que envia o SMS
+  if(knockVal == 0){
+     Impacto();
+  }
+}
+
+
+// Função para o envio de um SMS
+void EnviaSMS(){              
+ mySerial.write("AT+CMGF=1\r\n");                 // Activamos a função de envio de SMS
+ delay(100);                                    // Pequena pausa
+ mySerial.write("AT+CMGS=\"+5519981968000\"\r\n");  // Definimos o número do destinatário em formato internacional
+ delay(100);                                    // Pequena pausa
+ mySerial.write("test");     // Definimos o corpo da mensagem
+ delay(500);                                    // Pequena pausa
+ mySerial.write(char(26));                      // Enviamos o equivalente a Control+Z 
+ delay(100);                                    // Pequena pausa
+ mySerial.println("");                          // Enviamos um fim de linha
+ delay(100);                                    // Pequena pausa
+}
